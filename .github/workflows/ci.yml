@@ -1,0 +1,86 @@
+name: CI
+
+# Runs every tests/test_*.py against both supported Blender versions and
+# fails the job if any file raises or prints "RESULT: FAIL" on either one --
+# this is the same gate tests/run_all.ps1 enforces locally, just in CI.
+#
+# Blender exits 0 even when a test script raises (see every test file's own
+# header comment), so PASS/FAIL is judged by grepping combined stdout+stderr
+# for "Traceback" or "RESULT: FAIL", never by the process exit code alone.
+#
+# Versions are PINNED, not "latest 4.2.x" / "latest 5.2.x": Blender's
+# download server has no stable "latest point release" alias to script
+# against, and blender_manifest.toml's blender_version_min = "4.2.0" was
+# validated specifically against 4.2.23 (see that file's own comment) -- an
+# untested silent point-release bump is exactly the kind of drift this
+# workflow exists to catch, not cause. 4.2.23 is the FINAL 4.2 LTS point
+# release (4.2 left its support window in July 2026); if download.blender.org
+# ever pulls it from the primary host, switch BLENDER_URL below to one of the
+# official mirrors listed at https://www.blender.org/download/ rather than
+# guessing a new version number.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: "Blender ${{ matrix.blender_version }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - blender_version: "4.2.23"
+            blender_series: "Blender4.2"
+          - blender_version: "5.2.0"
+            blender_series: "Blender5.2"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Blender ${{ matrix.blender_version }}
+        id: cache-blender
+        uses: actions/cache@v4
+        with:
+          path: blender-${{ matrix.blender_version }}-linux-x64
+          key: blender-${{ matrix.blender_version }}-linux-x64-v1
+
+      - name: Download Blender ${{ matrix.blender_version }}
+        if: steps.cache-blender.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          url="https://download.blender.org/release/${{ matrix.blender_series }}/blender-${{ matrix.blender_version }}-linux-x64.tar.xz"
+          curl -fL --retry 3 -o blender.tar.xz "$url"
+          tar -xf blender.tar.xz
+          rm blender.tar.xz
+
+      - name: Run headless test suite
+        run: |
+          set -uo pipefail
+          blender="$PWD/blender-${{ matrix.blender_version }}-linux-x64/blender"
+          "$blender" --version
+
+          failed=""
+          for test in tests/test_*.py; do
+            echo "::group::$test"
+            output=$("$blender" --background --factory-startup --python "$test" 2>&1)
+            echo "$output"
+            echo "::endgroup::"
+            if echo "$output" | grep -qE "Traceback|RESULT: FAIL"; then
+              echo "::error::$test FAILED"
+              failed="$failed $test"
+            fi
+          done
+
+          if [ -n "$failed" ]; then
+            echo "::error::Failing test files:$failed"
+            exit 1
+          fi
+
+      - name: Validate the packaged zip
+        run: |
+          set -euo pipefail
+          python3 build.py
+          unzip -l magpie_swatches-*.zip | grep -q blender_manifest.toml

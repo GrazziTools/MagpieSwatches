@@ -1,0 +1,20 @@
+# Line endings.
+#
+# This add-on is developed on Windows, but the CI in .github/workflows/ci.yml
+# runs on ubuntu-latest, and anyone cloning may be on either. `text=auto`
+# stores every text file with LF *inside the repository* while still checking
+# it out with the platform's own convention, so a Windows editor keeps CRLF
+# locally and Linux keeps LF, with no whole-file diffs when the two meet.
+#
+# Without this, the first commit from Windows would bake CRLF into the repo
+# and every later diff from a Linux contributor would show every line as
+# changed.
+* text=auto
+
+# Binaries -- never convert, never diff as text.
+*.png binary
+*.psd binary
+*.svg text
+*.ttf binary
+*.zip binary
+*.blend binary

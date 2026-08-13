@@ -1,0 +1,45 @@
+schema_version = "1.0.0"
+
+# --- Identity (rename here + folder name to rebrand) ----------------------- #
+# Named after the magpie on the logo: the bird that collects small bright things
+# is the swatch collector. Every user-visible string derives from constants.py,
+# so a future rebrand stays cheap.
+id = "magpie_swatches"
+version = "0.14.0"
+name = "Magpie Swatches"
+tagline = "Printable filament swatches with raised or recessed labels"
+maintainer = "Gustavo Grazziano <grazzitools@gmail.com>"
+type = "add-on"
+
+website = "https://grazzitools.gumroad.com/"
+
+# Clean-room code, not derived from other work. GPL because every bpy add-on is,
+# when distributed.
+license = ["SPDX:GPL-3.0-or-later"]
+
+copyright = [
+  "2026 Gustavo Grazziano",
+]
+
+# VALIDATED, not assumed -- this was the add-on's biggest open risk.
+#
+# The swatch is built by a boolean: EMBOSS unions the raised glyphs onto the
+# plate, DEBOSS subtracts them. That is the SAME kind of operation GingerCutter
+# measured silently no-op'ing on 4.2 LTS -- FAST/EXACT only, no MANIFOLD solver
+# (that landed in 4.5) -- where the modifier reports success and merges
+# nothing, shipping a blank plate. engine/booleans.py verifies the result
+# geometrically and raises instead of shipping a blank part either way, so a
+# failure here is LOUD, not silent.
+#
+# MEASURED on Blender 4.2.23 LTS (has_manifold_solver() == False, solvers are
+# ['FAST', 'EXACT']): tests/test_swatch_emboss.py and test_swatch_deboss.py
+# both pass -- manifold, consistent face winding, and the exact expected
+# volume change for both a raised and a recessed label, plus a hole, a
+# single-field swatch, and an engrave depth pushed to its floor. The EXACT
+# solver's volumes for a 24x24x2 mm plate matched Blender 5.2's MANIFOLD
+# solver output to the decimal (1159.33 mm3 emboss, 1127.30 mm3 deboss on
+# both). Unlike GingerCutter's rim+wall+plate union, this add-on's glyph-onto-
+# flat-plate booleans hold up fine on EXACT -- 4.2 is not just an aspiration
+# here, it works. Re-run both test_swatch_* files before ever raising this.
+blender_version_min = "4.2.0"
+tags = ["Mesh", "3D View"]

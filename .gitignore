@@ -1,0 +1,54 @@
+# Blender working files
+*.blend1
+*.blend2
+
+# Python
+__pycache__/
+*.pyc
+
+# Build output.
+#
+# The release zips are deliberately NOT versioned. They are build artifacts:
+# `python build.py` reproduces any of them byte-for-byte from the matching
+# tag, so committing them would store ~8 MB (and growing, one per release)
+# of derivable data. On GitHub the right home for a release binary is the
+# Releases tab, attached to its version tag.
+#
+# This does NOT contradict the house rule of keeping every old zip -- they
+# stay on disk locally, untouched. Ignoring is not deleting.
+#
+# It also keeps the CI green: the last workflow step runs `python3 build.py`,
+# and build.py REFUSES to overwrite an existing zip (on purpose, so a
+# forgotten version bump fails loudly). With the current version's zip
+# committed, a clean checkout would hit that refusal and go red on the very
+# first push.
+magpie_swatches-*.zip
+dist/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Art working files.
+#
+# The LOGO/ folder holds the Photoshop sources the shipped artwork was made
+# from -- 2.5 MB of PSD and full-resolution PNG that nobody cloning this
+# repository needs. They stay on disk locally, they just are not versioned.
+#
+# The whole folder, SVG included: the hook's shape follows a community
+# standard rather than being an original design, so there is no originality
+# claim for a source file to evidence. hook_shape.py carries the outline as
+# plain coordinates and cites the pattern's origin in its own docstring.
+LOGO/
+
+# Internal decision records.
+#
+# The docs/decisions/*.md files record why each calibrated number is the
+# value it is, and they stay on the author's machine only -- they are
+# working notes in Portuguese, not documentation for anyone cloning this.
+# README.md and CHANGELOG.md carry everything an outside reader needs.
+docs/
